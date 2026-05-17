@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioSync Pro - Enterprise Local Edition</title>
+    <!-- Tailwind CSS for rapid modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Premium Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { 
+            --bg: #020617; 
+            --surface: rgba(15, 23, 42, 0.6); 
+            --accent: #6366f1; 
+            --accent-hover: #4f46e5;
+            --text: #f8fafc; 
+            --border: rgba(255, 255, 255, 0.08); 
+            --text-secondary: #94a3b8;
+        }
+        body.light-mode { 
+            --bg: #f1f5f9; 
+            --surface: rgba(255, 255, 255, 0.7); 
+            --accent: #4f46e5; 
+            --accent-hover: #4338ca;
+            --text: #0f172a; 
+            --border: rgba(0, 0, 0, 0.08); 
+            --text-secondary: #64748b;
+        }
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            min-height: 100vh; 
+            overflow-x: hidden; 
+        }
+        .glass { 
+            background: var(--surface); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border); 
+            border-radius: 24px; 
+            transition: background 0.3s ease, border 0.3s ease;
+        }
+        .btn-primary { 
+            background: var(--accent); 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .btn-primary:hover { 
+            background: var(--accent-hover);
+            transform: translateY(-2px); 
+            box-shadow: 0 12px 24px -8px var(--accent); 
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+        @keyframes scan { 
+            0% { top: 0; opacity: 0.2; } 
+            50% { opacity: 1; } 
+            100% { top: 100%; opacity: 0.2; } 
+        }
+        .scan-line { 
+            position: absolute; 
+            width: 100%; 
+            height: 3px; 
+            background: linear-gradient(to right, transparent, var(--accent), transparent); 
+            box-shadow: 0 0 15px var(--accent); 
+            display: none; 
+        }
+        .active-scan .scan-line { 
+            display: block; 
+            animation: scan 1.8s infinite ease-in-out; 
+        }
+        /* Custom scrollbar */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex items-center justify-center">
+
+    <!-- Toast Notification System -->
+    <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3.5 rounded-full glass text-sm font-bold opacity-0 -translate-y-4 transition-all duration-300 pointer-events-none shadow-2xl flex items-center gap-2"></div>
+
+    <!-- Theme Toggle Button (Selalu Melayang) -->
+    <button id="theme-btn" class="fixed top-6 right-6 w-12 h-12 glass flex items-center justify-center text-xl shadow-xl z-50 hover:scale-110 active:scale-95 transition-all">🌙</button>
+
+    <!-- UI: LOGIN -->
+    <div id="auth-section" class="w-full max-w-md mx-auto space-y-8 transition-all duration-500 py-8">
+        <div class="text-center space-y-4">
+            <div class="w-24 h-24 bg-indigo-600 rounded-[2.2rem] mx-auto flex items-center justify-center shadow-2xl rotate-6 hover:rotate-0 transition-transform duration-300">
+                <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.519 1.298-3.003 2.103-4.5"/>
+                </svg>
+            </div>
+            <h1 class="text-5xl font-black tracking-tighter italic">BioSync <span class="text-indigo-500">PRO</span></h1>
+            <p class="text-[10px] font-bold opacity-50 uppercase tracking-[0.4em]">Enterprise Local Database v5.0</p>
+        </div>
+
+        <!-- Tab Login (User vs Admin) -->
+        <div class="glass p-2 flex gap-1 rounded-2xl">
+            <button id="tab-user-btn" class="flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider bg-indigo-600/20 text-indigo-400 transition-all">Absensi Personel</button>
+            <button id="tab-admin-btn" class="flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-white/5 transition-all">Portal Admin</button>
+        </div>
+
+        <!-- FORM: USER LOGIN -->
+        <div id="form-user" class="glass p-8 space-y-6 shadow-2xl">
+            <div class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold uppercase opacity-60 ml-1">Identitas Personel</label>
+                    <input id="user-name" type="text" placeholder="Masukkan Nama Lengkap..." class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-semibold text-sm">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold uppercase opacity-60 ml-1">ID Verifikasi / NIP</label>
+                    <input id="user-id" type="text" placeholder="Masukkan ID Unik..." class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-mono text-sm">
+                </div>
+            </div>
+            <button id="login-btn" class="w-full btn-primary text-white font-black py-5 rounded-2xl uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg">
+                <span>Inisialisasi Absensi</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+            <p class="text-center text-[9px] font-bold opacity-40 uppercase tracking-wider">🔒 Data disimpan 100% aman di browser ini</p>
+        </div>
+
+        <!-- FORM: ADMIN LOGIN -->
+        <div id="form-admin" class="hidden glass p-8 space-y-6 shadow-2xl">
+            <div class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold uppercase opacity-60 ml-1">Sandi Administrator</label>
+                    <input id="admin-pass" type="password" placeholder="Sandi Default: admin123" class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-semibold text-sm tracking-widest">
+                </div>
+            </div>
+            <button id="login-admin-btn" class="w-full btn-primary text-white font-black py-5 rounded-2xl uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg">
+                <span>Masuk Dashboard Admin</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+            </button>
+            <p class="text-center text-[9px] font-bold opacity-40 uppercase tracking-wider">🔐 Enkripsi Kunci Sesi Administrator Aktif</p>
+        </div>
+    </div>
+
+    <!-- UI: DASHBOARD PERSONEL -->
+    <div id="dashboard" class="hidden w-full max-w-6xl mx-auto space-y-8 opacity-0 transition-all duration-700 py-4">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div class="flex items-center gap-4">
+                <div id="user-initial" class="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-3xl font-black text-white shadow-lg shadow-indigo-500/30">?</div>
+                <div>
+                    <h2 id="display-name" class="text-3xl font-black tracking-tight">---</h2>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span id="display-id" class="text-xs font-mono opacity-60 uppercase tracking-tighter">ID: ---</span>
+                        <div class="status-dot bg-emerald-500 animate-pulse"></div>
+                        <span class="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Sesi Enkripsi Lokal</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-left md:text-right">
+                    <div id="clock" class="text-4xl font-black text-indigo-500 tabular-nums leading-none tracking-tighter">00:00:00</div>
+                    <div id="date" class="text-[10px] font-bold opacity-50 uppercase tracking-[0.2em] mt-2">---</div>
+                </div>
+                <button id="logout-btn" class="px-4 py-3 rounded-xl bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white text-xs font-bold uppercase transition-all">Keluar</button>
+            </div>
+        </header>
+
+        <!-- Stats Grid (Personel) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass p-5 h-28 flex flex-col justify-between">
+                <p class="text-[9px] font-bold opacity-50 uppercase tracking-widest">Absen Saya</p>
+                <div class="flex items-baseline gap-2">
+                    <span id="stat-total-personel" class="text-4xl font-black italic">0</span>
+                    <span class="text-[9px] font-bold opacity-40">TEREKAM</span>
+                </div>
+            </div>
+            <div class="glass p-5 h-28 flex flex-col justify-between border-l-4 border-l-indigo-500">
+                <p class="text-[9px] font-bold opacity-50 uppercase tracking-widest">Status Sistem</p>
+                <div>
+                    <span class="text-xl font-black text-indigo-400 block leading-tight">OFFLINE SECURE</span>
+                    <span class="text-[8px] font-mono opacity-40">LOCAL DATABASE MODULAR</span>
+                </div>
+            </div>
+            <div class="glass p-5 h-28 flex flex-col justify-between">
+                <p class="text-[9px] font-bold opacity-50 uppercase tracking-widest">Presisi Satelit</p>
+                <div class="flex items-baseline gap-1">
+                    <span id="stat-accuracy" class="text-4xl font-black text-amber-500 italic">--</span>
+                    <span id="stat-accuracy-unit" class="text-[9px] font-bold opacity-40 uppercase">Meters</span>
+                </div>
+            </div>
+            <div class="glass p-5 h-28 flex flex-col justify-between overflow-hidden relative">
+                <p class="text-[9px] font-bold opacity-50 uppercase tracking-widest">Sistem Penyimpanan</p>
+                <span class="text-2xl font-black text-emerald-500 italic">BROWSER OK</span>
+                <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-emerald-500/10 rounded-full blur-2xl"></div>
+            </div>
+        </div>
+
+        <!-- Main Content Layout (Personel) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Camera Feed View -->
+            <div class="lg:col-span-2 space-y-4">
+                <div id="cam-box" class="relative aspect-video glass overflow-hidden shadow-2xl group ring-1 ring-white/10">
+                    <video id="webcam" autoplay playsinline class="w-full h-full object-cover brightness-110 grayscale-[0.1]"></video>
+                    <div class="scan-line"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none"></div>
+                    
+                    <div class="absolute top-6 left-6 flex items-center gap-2">
+                        <div class="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></div>
+                        <span class="text-[10px] font-bold text-white uppercase tracking-widest">LIVE BIOMETRIC</span>
+                    </div>
+
+                    <div class="absolute bottom-6 left-6 right-6 flex items-end justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="bg-black/60 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 max-w-xs md:max-w-md">
+                                <p id="gps-text" class="text-[10px] font-mono text-white/90">MENUNGGU DATA GPS...</p>
+                                <p id="gps-status" class="text-[9px] font-bold text-indigo-400 uppercase tracking-tighter mt-0.5">MENGHUBUNGKAN SATELIT...</p>
+                            </div>
+                        </div>
+                        <button id="capture-btn" class="w-20 h-20 rounded-[1.8rem] bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center shadow-2xl transition-all active:scale-90 group-hover:scale-105 border-4 border-white/20 shrink-0">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Logs Section (Individual) -->
+            <div class="glass flex flex-col h-[400px] lg:h-auto min-h-[400px]">
+                <div class="p-6 border-b border-white/10">
+                    <h3 class="text-xs font-black uppercase tracking-widest opacity-70">Log Riwayat Saya</h3>
+                    <p class="text-[9px] font-mono opacity-40 mt-0.5">SINKRONISASI BROWSER LOKAL</p>
+                </div>
+                
+                <div id="log-list-individual" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll">
+                    <div class="text-center py-20 opacity-30 italic text-xs tracking-widest">Memulai feed data lokal...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI: DASHBOARD ADMIN -->
+    <div id="admin-dashboard" class="hidden w-full max-w-6xl mx-auto space-y-8 opacity-0 transition-all duration-700 py-4">
+        
+        <!-- Header Admin -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-2xl bg-amber-600 flex items-center justify-center text-3xl font-black text-white shadow-lg shadow-amber-500/30">💼</div>
+                <div>
+                    <h2 class="text-3xl font-black tracking-tight text-amber-500">Panel Admin BioSync</h2>
+                    <div class="flex items-center gap-2 mt-1">
+                        <div class="status-dot bg-amber-500 animate-pulse"></div>
+                        <span class="text-[9px] font-bold text-amber-500 uppercase tracking-widest">Sesi Kontrol Penuh Terbuka</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="kiosk-mode-btn" class="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase transition-all shadow-lg flex items-center gap-2">
+                    <span>⚡ Mode Kios</span>
+                </button>
+                <button id="logout-admin-btn" class="px-5 py-3 rounded-xl bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white text-xs font-bold uppercase transition-all">Keluar Admin</button>
+            </div>
+        </header>
+
+        <!-- Stats Grid (Admin) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass p-5 h-28 flex flex-col justify-between border-l-4 border-l-amber-500">
+                <p class="text-[9px] font-bold opacity-50 uppercase tracking-widest">Total Seluruh Absensi</p>
+                <div class="flex items-baseline gap-2">
+                    <span id="admin-stat-total" class="text-4xl font-black italic text-amber-500">0</span>
+                    <span class="text-[9px] font-bold opacity-40">REKOR</span>
+                </div>
+            </div>
+            <div class="glass p-5 h-28 flex flex-col justify-between">
+                <p class="text-[9px] font-bold opacity-50 uppercase tracking-widest">Personel Terdaftar</p>
+                <div class="flex items-baseline gap-2">
+                    <span id="admin-stat-unique" class="text-4xl font-black italic">0</span>
+                    <span class="text-[9px] font-bold opacity-40">PERSONEL</span>
+                </div>
+            </div>
+            <div class="glass p-5 h-28 flex flex-col justify-between">
+                <p class="text-[9px] font-bold opacity-50 uppercase tracking-widest">Hadir Hari Ini</p>
+                <div class="flex items-baseline gap-2">
+                    <span id="admin-stat-today" class="text-4xl font-black italic text-emerald-500">0</span>
+                    <span class="text-[9px] font-bold opacity-40 font-mono">OK</span>
+                </div>
+            </div>
+            <div class="glass p-5 h-28 flex flex-col justify-between">
+                <p class="text-[9px] font-bold opacity-50 uppercase tracking-widest">Akurasi Rata-rata GPS</p>
+                <div class="flex items-baseline gap-1">
+                    <span id="admin-stat-gps" class="text-4xl font-black text-indigo-400 italic">--</span>
+                    <span class="text-[9px] font-bold opacity-40 uppercase">Meters</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Layout (Admin) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Table Database Log -->
+            <div class="lg:col-span-2 glass p-6 flex flex-col h-[550px] overflow-hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-wider">Database Utama Browser</h3>
+                        <p class="text-[10px] font-mono opacity-50">Menampilkan semua log kehadiran lokal yang pernah terekam</p>
+                    </div>
+                    <!-- Search Input -->
+                    <input id="admin-search" type="text" placeholder="Cari nama atau NIP..." class="w-full sm:w-64 bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none focus:border-amber-500 text-xs font-semibold">
+                </div>
+
+                <!-- Table Content -->
+                <div class="flex-1 overflow-auto custom-scroll border border-white/5 rounded-xl">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-white/5 uppercase font-bold text-[10px] tracking-wider sticky top-0 z-10">
+                            <tr>
+                                <th class="p-4 border-b border-white/10">Nama Lengkap</th>
+                                <th class="p-4 border-b border-white/10">NIP / ID</th>
+                                <th class="p-4 border-b border-white/10">Waktu Absen</th>
+                                <th class="p-4 border-b border-white/10">Koordinat GPS</th>
+                                <th class="p-4 border-b border-white/10 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body" class="divide-y divide-white/5">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin Action Center & Quick Directory -->
+            <div class="glass p-6 flex flex-col h-[550px] justify-between">
+                <div>
+                    <h3 class="text-sm font-black uppercase tracking-wider mb-4 text-amber-500">Pusat Kendali Admin</h3>
+                    
+                    <div class="space-y-3">
+                        <!-- Export Excel / CSV -->
+                        <button id="admin-export-csv" class="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span>Ekspor Laporan (Excel/CSV)</span>
+                        </button>
+                        
+                        <!-- Export JSON -->
+                        <button id="admin-export-json" class="w-full py-4 rounded-xl bg-indigo-600/20 hover:bg-indigo-600 hover:text-white text-indigo-400 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-indigo-500/20">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                            <span>Salin Log Mentah (JSON)</span>
+                        </button>
+
+                        <!-- Clear Database -->
+                        <button id="admin-reset" class="w-full py-4 rounded-xl bg-red-600/10 hover:bg-red-600 hover:text-white text-red-400 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-red-500/20">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            <span>Reset Seluruh Log</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Directory List of Active Employees -->
+                <div class="border-t border-white/10 pt-4 flex-1 mt-4 overflow-hidden flex flex-col">
+                    <h4 class="text-[10px] font-black uppercase opacity-50 tracking-widest mb-2">Direktori Unik Personel</h4>
+                    <div id="admin-unique-list" class="flex-1 overflow-y-auto custom-scroll space-y-2">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI: KIOSK MODE -->
+    <div id="kiosk-mode" class="hidden w-full max-w-4xl mx-auto space-y-8 opacity-0 transition-all duration-700 py-4">
+        <header class="flex justify-between items-center border-b border-white/10 pb-6">
+            <div>
+                <span class="px-2 py-1 bg-indigo-600 text-white text-[9px] font-black tracking-widest uppercase rounded">Mode Kios Aktif</span>
+                <h2 class="text-3xl font-black mt-1">Terminal Absensi Bersama</h2>
+            </div>
+            <button id="exit-kiosk-btn" class="px-5 py-3 rounded-xl bg-amber-600 text-white text-xs font-bold uppercase tracking-wider transition-all">
+                Keluar Mode Kios
+            </button>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Camera Feed (Left) -->
+            <div id="kiosk-cam-box" class="relative aspect-video glass overflow-hidden shadow-2xl rounded-3xl">
+                <video id="kiosk-webcam" autoplay playsinline class="w-full h-full object-cover brightness-110"></video>
+                <div class="scan-line"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent pointer-events-none"></div>
+                <div class="absolute bottom-4 left-4">
+                    <p id="kiosk-gps-text" class="text-[10px] font-mono text-white/90">MENUNGGU SATELIT...</p>
+                </div>
+            </div>
+
+            <!-- Fast Submission Form (Right) -->
+            <div class="glass p-8 flex flex-col justify-between space-y-6">
+                <div class="space-y-4">
+                    <h3 class="text-sm font-black uppercase tracking-wider">Tempel / Masukkan ID Kamu</h3>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold uppercase opacity-60">Nama Lengkap</label>
+                        <input id="kiosk-name" type="text" placeholder="Ketik nama kamu..." class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 text-sm font-semibold">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold uppercase opacity-60">ID / NIP Unik</label>
+                        <input id="kiosk-id" type="text" placeholder="Ketik NIP/ID kamu..." class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 text-sm font-mono">
+                    </div>
+                </div>
+
+                <button id="kiosk-submit-btn" class="w-full btn-primary text-white font-black py-4 rounded-xl uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl">
+                    <span>Absen & Foto</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // State Management
+        let userData = { name: '', id: '' };
+        let currentPos = { lat: 0, lng: 0, acc: 0 };
+        const STORAGE_KEY = 'biosync_local_records';
+        let records = [];
+        let activeWebcamStream = null;
+
+        // UI Selectors
+        const ui = {
+            authSection: document.getElementById('auth-section'),
+            tabUserBtn: document.getElementById('tab-user-btn'),
+            tabAdminBtn: document.getElementById('tab-admin-btn'),
+            formUser: document.getElementById('form-user'),
+            formAdmin: document.getElementById('form-admin'),
+            userName: document.getElementById('user-name'),
+            userId: document.getElementById('user-id'),
+            adminPass: document.getElementById('admin-pass'),
+            loginBtn: document.getElementById('login-btn'),
+            loginAdminBtn: document.getElementById('login-admin-btn'),
+            toast: document.getElementById('toast'),
+            
+            // Dashboard Personel
+            dashboard: document.getElementById('dashboard'),
+            displayName: document.getElementById('display-name'),
+            displayId: document.getElementById('display-id'),
+            userInitial: document.getElementById('user-initial'),
+            clock: document.getElementById('clock'),
+            date: document.getElementById('date'),
+            statTotalPersonel: document.getElementById('stat-total-personel'),
+            statAccuracy: document.getElementById('stat-accuracy'),
+            statAccuracyUnit: document.getElementById('stat-accuracy-unit'),
+            gpsText: document.getElementById('gps-text'),
+            gpsStatus: document.getElementById('gps-status'),
+            captureBtn: document.getElementById('capture-btn'),
+            camBox: document.getElementById('cam-box'),
+            webcam: document.getElementById('webcam'),
+            logListIndividual: document.getElementById('log-list-individual'),
+            logoutBtn: document.getElementById('logout-btn'),
+            themeBtn: document.getElementById('theme-btn'),
+
+            // Dashboard Admin
+            adminDashboard: document.getElementById('admin-dashboard'),
+            logoutAdminBtn: document.getElementById('logout-admin-btn'),
+            kioskModeBtn: document.getElementById('kiosk-mode-btn'),
+            adminStatTotal: document.getElementById('admin-stat-total'),
+            adminStatUnique: document.getElementById('admin-stat-unique'),
+            adminStatToday: document.getElementById('admin-stat-today'),
+            adminStatGps: document.getElementById('admin-stat-gps'),
+            adminSearch: document.getElementById('admin-search'),
+            adminTableBody: document.getElementById('admin-table-body'),
+            adminUniqueList: document.getElementById('admin-unique-list'),
+            adminExportCsv: document.getElementById('admin-export-csv'),
+            adminExportJson: document.getElementById('admin-export-json'),
+            adminReset: document.getElementById('admin-reset'),
+
+            // Kiosk Mode
+            kioskMode: document.getElementById('kiosk-mode'),
+            kioskWebcam: document.getElementById('kiosk-webcam'),
+            kioskCamBox: document.getElementById('kiosk-cam-box'),
+            kioskGpsText: document.getElementById('kiosk-gps-text'),
+            kioskName: document.getElementById('kiosk-name'),
+            kioskId: document.getElementById('kiosk-id'),
+            kioskSubmitBtn: document.getElementById('kiosk-submit-btn'),
+            exitKioskBtn: document.getElementById('exit-kiosk-btn')
+        };
+
+        // Custom Toast System (Anti alert)
+        function showToast(message, isError = false) {
+            ui.toast.innerText = message;
+            if (isError) {
+                ui.toast.className = "fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3.5 rounded-full glass text-sm font-bold transition-all duration-300 shadow-2xl flex items-center gap-2 border-red-500/30 text-red-400 bg-red-950/20";
+            } else {
+                ui.toast.className = "fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3.5 rounded-full glass text-sm font-bold transition-all duration-300 shadow-2xl flex items-center gap-2 border-indigo-500/30 text-indigo-400 bg-indigo-950/20";
+            }
+            
+            ui.toast.classList.replace('opacity-0', 'opacity-100');
+            ui.toast.classList.replace('-translate-y-4', 'translate-y-0');
+            
+            setTimeout(() => {
+                ui.toast.classList.replace('opacity-100', 'opacity-0');
+                ui.toast.classList.replace('translate-y-0', '-translate-y-4');
+            }, 3000);
+        }
+
+        // Initialize GPS Location Engine
+        function initGPS() {
+            if (!navigator.geolocation) {
+                if(ui.gpsStatus) ui.gpsStatus.innerText = "⚠️ GPS TIDAK DIDUKUNG";
+                return;
+            }
+
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    currentPos.lat = position.coords.latitude;
+                    currentPos.lng = position.coords.longitude;
+                    currentPos.acc = position.coords.accuracy;
+
+                    const coordStr = `LAT: ${currentPos.lat.toFixed(6)} | LNG: ${currentPos.lng.toFixed(6)}`;
+                    
+                    if(ui.gpsText) ui.gpsText.innerText = coordStr;
+                    if(ui.kioskGpsText) ui.kioskGpsText.innerText = coordStr;
+                    if(ui.gpsStatus) {
+                        ui.gpsStatus.innerText = "✓ SATELIT TERVERIFIKASI";
+                        ui.gpsStatus.className = "text-[9px] font-bold text-emerald-500 uppercase tracking-tighter mt-0.5";
+                    }
+                    
+                    if(ui.statAccuracy) {
+                        ui.statAccuracy.innerText = Math.round(currentPos.acc);
+                        ui.statAccuracy.className = "text-4xl font-black italic text-emerald-500";
+                    }
+                    if(ui.statAccuracyUnit) ui.statAccuracyUnit.className = "text-[9px] font-bold text-emerald-500/60 uppercase";
+                },
+                (error) => {
+                    let errorMsg = "IZIN LOKASI DITOLAK";
+                    if (error.code === 2) errorMsg = "SINYAL GPS LEMAH";
+                    if (error.code === 3) errorMsg = "TIMEOUT PENCARIAN GPS";
+                    
+                    if(ui.gpsStatus) {
+                        ui.gpsStatus.innerText = `⚠️ ${errorMsg}`;
+                        ui.gpsStatus.className = "text-[9px] font-bold text-amber-500 uppercase tracking-tighter mt-0.5";
+                    }
+                    
+                    if(ui.statAccuracy) {
+                        ui.statAccuracy.innerText = "--";
+                        ui.statAccuracy.className = "text-4xl font-black italic text-amber-500";
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+            );
+        }
+
+        // Initialize Webcam Device
+        async function initWebcam(videoElement, targetBox) {
+            // Stop active streams first
+            stopWebcam();
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } 
+                });
+                activeWebcamStream = stream;
+                videoElement.srcObject = stream;
+                videoElement.style.display = "block";
+            } catch (error) {
+                showToast("Kamera gagal dimuat atau izin ditolak", true);
+                videoElement.style.display = "none";
+                const placeholder = document.createElement('div');
+                placeholder.id = "cam-fallback";
+                placeholder.className = "absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-slate-900/40";
+                placeholder.innerHTML = `
+                    <svg class="w-16 h-16 text-red-500 opacity-60 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    <p class="text-sm font-bold uppercase opacity-80 text-white">AKSES KAMERA DINONAKTIFKAN</p>
+                    <p class="text-[10px] opacity-50 text-white max-w-xs mt-1">Harap aktifkan izin kamera di pengaturan browser Anda.</p>
+                `;
+                targetBox.appendChild(placeholder);
+            }
+        }
+
+        function stopWebcam() {
+            if (activeWebcamStream) {
+                activeWebcamStream.getTracks().forEach(track => track.stop());
+                activeWebcamStream = null;
+            }
+            const fallback = document.getElementById('cam-fallback');
+            if (fallback) fallback.remove();
+        }
+
+        // Tab switching logic (User / Admin)
+        ui.tabUserBtn.onclick = () => {
+            ui.tabUserBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider bg-indigo-600/20 text-indigo-400 transition-all";
+            ui.tabAdminBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-white/5 transition-all";
+            ui.formUser.classList.remove('hidden');
+            ui.formAdmin.classList.add('hidden');
+        };
+
+        ui.tabAdminBtn.onclick = () => {
+            ui.tabAdminBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider bg-indigo-600/20 text-indigo-400 transition-all";
+            ui.tabUserBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-white/5 transition-all";
+            ui.formAdmin.classList.remove('hidden');
+            ui.formUser.classList.add('hidden');
+        };
+
+        // Handle User Login
+        ui.loginBtn.onclick = () => {
+            const nameValue = ui.userName.value.trim();
+            const idValue = ui.userId.value.trim();
+
+            if (!nameValue || !idValue) {
+                showToast("Mohon lengkapi Nama & ID Verifikasi!", true);
+                return;
+            }
+
+            userData = { name: nameValue, id: idValue };
+            
+            // Launch Dashboard with seamless fade transition
+            ui.authSection.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                ui.authSection.classList.add('hidden');
+                ui.dashboard.classList.remove('hidden');
+                setTimeout(() => {
+                    ui.dashboard.classList.add('opacity-100');
+                    document.body.classList.remove('flex', 'items-center', 'justify-center');
+                }, 50);
+            }, 500);
+
+            ui.displayName.innerText = userData.name;
+            ui.displayId.innerText = `ID: ${userData.id}`;
+            ui.userInitial.innerText = userData.name.charAt(0).toUpperCase();
+
+            initGPS();
+            initWebcam(ui.webcam, ui.camBox);
+            loadRecords();
+            showToast("Identifikasi Berhasil. Membuka Terminal.");
+        };
+
+        // Handle Admin Login
+        ui.loginAdminBtn.onclick = () => {
+            const pass = ui.adminPass.value.trim();
+
+            if (pass === "admin123") {
+                ui.authSection.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    ui.authSection.classList.add('hidden');
+                    ui.adminDashboard.classList.remove('hidden');
+                    setTimeout(() => {
+                        ui.adminDashboard.classList.add('opacity-100');
+                        document.body.classList.remove('flex', 'items-center', 'justify-center');
+                    }, 50);
+                }, 500);
+
+                loadRecords();
+                renderAdminDashboard();
+                showToast("Akses Administrator Terbuka.");
+            } else {
+                showToast("Kata Sandi Admin Salah!", true);
+            }
+        };
+
+        // Logouts
+        ui.logoutBtn.onclick = () => {
+            stopWebcam();
+            ui.dashboard.classList.add('opacity-0');
+            setTimeout(() => {
+                ui.dashboard.classList.add('hidden');
+                ui.authSection.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                document.body.classList.add('p-4', 'md:p-8', 'flex', 'items-center', 'justify-center');
+            }, 500);
+        };
+
+        ui.logoutAdminBtn.onclick = () => {
+            ui.adminDashboard.classList.add('opacity-0');
+            setTimeout(() => {
+                ui.adminDashboard.classList.add('hidden');
+                ui.authSection.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                document.body.classList.add('p-4', 'md:p-8', 'flex', 'items-center', 'justify-center');
+            }, 500);
+        };
+
+        // Kiosk Mode Toggle Navigation
+        ui.kioskModeBtn.onclick = () => {
+            ui.adminDashboard.classList.add('opacity-0');
+            setTimeout(() => {
+                ui.adminDashboard.classList.add('hidden');
+                ui.kioskMode.classList.remove('hidden');
+                setTimeout(() => {
+                    ui.kioskMode.classList.add('opacity-100');
+                }, 50);
+                initGPS();
+                initWebcam(ui.kioskWebcam, ui.kioskCamBox);
+            }, 500);
+        };
+
+        ui.exitKioskBtn.onclick = () => {
+            stopWebcam();
+            ui.kioskMode.classList.add('opacity-0');
+            setTimeout(() => {
+                ui.kioskMode.classList.add('hidden');
+                ui.adminDashboard.classList.remove('hidden');
+                setTimeout(() => {
+                    ui.adminDashboard.classList.add('opacity-100');
+                }, 50);
+                renderAdminDashboard();
+            }, 500);
+        };
+
+
+        // Database engine
+        function loadRecords() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            records = raw ? JSON.parse(raw) : [];
+            renderIndividualLogs();
+        }
+
+        function saveRecords() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+            renderIndividualLogs();
+        }
+
+        // Attendance Actions (Personel)
+        ui.captureBtn.onclick = () => {
+            ui.captureBtn.disabled = true;
+            ui.camBox.classList.add('active-scan');
+            showToast("Memproses data biometrik...");
+
+            setTimeout(() => {
+                const now = new Date();
+                const newRecord = {
+                    id: 'REC_' + Date.now(),
+                    nama: userData.name,
+                    id_peserta: userData.id,
+                    timestamp: now.toISOString(),
+                    lat: currentPos.lat,
+                    lng: currentPos.lng,
+                    accuracy: currentPos.acc || 15
+                };
+
+                records.unshift(newRecord);
+                saveRecords();
+
+                ui.camBox.classList.remove('active-scan');
+                ui.captureBtn.disabled = false;
+                showToast("✓ Presensi Berhasil Terekam!");
+            }, 1800);
+        };
+
+        // Attendance Actions (Kiosk Mode)
+        ui.kioskSubmitBtn.onclick = () => {
+            const kname = ui.kioskName.value.trim();
+            const kid = ui.kioskId.value.trim();
+
+            if (!kname || !kid) {
+                showToast("Isi Nama & ID Terlebih dahulu!", true);
+                return;
+            }
+
+            ui.kioskSubmitBtn.disabled = true;
+            ui.kioskCamBox.classList.add('active-scan');
+            showToast("Memproses presensi kios...");
+
+            setTimeout(() => {
+                const now = new Date();
+                const newRecord = {
+                    id: 'REC_' + Date.now(),
+                    nama: kname,
+                    id_peserta: kid,
+                    timestamp: now.toISOString(),
+                    lat: currentPos.lat,
+                    lng: currentPos.lng,
+                    accuracy: currentPos.acc || 15
+                };
+
+                records.unshift(newRecord);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+
+                ui.kioskCamBox.classList.remove('active-scan');
+                ui.kioskSubmitBtn.disabled = false;
+                
+                // Clear Input for next employee
+                ui.kioskName.value = "";
+                ui.kioskId.value = "";
+
+                showToast(`✓ Presensi ${kname} Terekam Berhasil!`);
+            }, 1500);
+        };
+
+        // Render logs specifically for the logged-in individual
+        function renderIndividualLogs() {
+            const personalLogs = records.filter(r => r.id_peserta === userData.id);
+            ui.statTotalPersonel.innerText = personalLogs.length;
+
+            if (personalLogs.length === 0) {
+                ui.logListIndividual.innerHTML = `
+                    <div class="text-center py-20 opacity-30 italic text-xs tracking-widest">
+                        Belum ada riwayat presensi lokal Anda.
+                    </div>
+                `;
+                return;
+            }
+
+            ui.logListIndividual.innerHTML = personalLogs.map(x => {
+                const dateObj = new Date(x.timestamp);
+                const formatTime = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const formatDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                const loc = (x.lat && x.lng) ? `${x.lat.toFixed(4)}, ${x.lng.toFixed(4)}` : "Tanpa GPS";
+
+                return `
+                    <div class="p-4 glass border border-white/5 flex items-center justify-between gap-4 group">
+                        <div class="overflow-hidden space-y-0.5">
+                            <p class="text-[11px] font-black uppercase tracking-wide truncate">${x.nama}</p>
+                            <p class="text-[9px] font-mono opacity-50 uppercase">${formatDate} • ${formatTime}</p>
+                            <p class="text-[9px] font-mono text-indigo-400 opacity-80">📍 GPS: ${loc}</p>
+                        </div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-lg shrink-0"></div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Admin Dashboard Core Rendering Engine
+        function renderAdminDashboard() {
+            // Calculated Metrics
+            const totalRecords = records.length;
+            const uniqueUsers = new Set(records.map(r => r.id_peserta)).size;
+            
+            const todayStr = new Date().toDateString();
+            const todayRecords = records.filter(r => new Date(r.timestamp).toDateString() === todayStr).length;
+
+            const gpsAvgs = records.filter(r => r.accuracy > 0);
+            const avgGps = gpsAvgs.length > 0 ? Math.round(gpsAvgs.reduce((acc, cur) => acc + cur.accuracy, 0) / gpsAvgs.length) : "--";
+
+            ui.adminStatTotal.innerText = totalRecords;
+            ui.adminStatUnique.innerText = uniqueUsers;
+            ui.adminStatToday.innerText = todayRecords;
+            ui.adminStatGps.innerText = avgGps;
+
+            // Render Table Database
+            renderAdminTable();
+
+            // Render Employee Unique list
+            renderUniqueEmployeeList();
+        }
+
+        // Live filtering inside the search input
+        ui.adminSearch.oninput = () => {
+            renderAdminTable();
+        };
+
+        function renderAdminTable() {
+            const query = ui.adminSearch.value.toLowerCase().trim();
+            const filtered = records.filter(r => 
+                r.nama.toLowerCase().includes(query) || 
+                r.id_peserta.toLowerCase().includes(query)
+            );
+
+            if (filtered.length === 0) {
+                ui.adminTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="p-8 text-center text-xs opacity-40 italic">Tidak ditemukan rekor data yang cocok.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            ui.adminTableBody.innerHTML = filtered.map(x => {
+                const dateObj = new Date(x.timestamp);
+                const formatTime = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                const formatDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const loc = (x.lat && x.lng) ? `${x.lat.toFixed(4)}, ${x.lng.toFixed(4)}` : "Tanpa GPS";
+
+                return `
+                    <tr class="hover:bg-white/5 transition-all">
+                        <td class="p-4 font-bold text-sm truncate max-w-[150px]">${x.nama}</td>
+                        <td class="p-4 font-mono text-[11px] opacity-70">${x.id_peserta}</td>
+                        <td class="p-4 text-[11px]">
+                            <span class="block font-semibold">${formatDate}</span>
+                            <span class="text-[9px] opacity-40 font-mono">${formatTime}</span>
+                        </td>
+                        <td class="p-4 font-mono text-[10px] text-indigo-400">
+                            📍 ${loc}
+                            <span class="block text-[8px] opacity-40">Akurasi: ${Math.round(x.accuracy)}m</span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button onclick="adminDeleteRecord('${x.id}')" class="p-2 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-all" title="Hapus log ini">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.adminDeleteRecord = (id) => {
+            records = records.filter(r => r.id !== id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+            renderAdminDashboard();
+            showToast("Log terpilih dihapus permanen.");
+        };
+
+        function renderUniqueEmployeeList() {
+            // Group frequencies of attendance per employee ID
+            const counts = {};
+            records.forEach(r => {
+                if(!counts[r.id_peserta]) {
+                    counts[r.id_peserta] = { nama: r.nama, count: 0 };
+                }
+                counts[r.id_peserta].count += 1;
+            });
+
+            const items = Object.keys(counts);
+            if (items.length === 0) {
+                ui.adminUniqueList.innerHTML = `<p class="text-[10px] opacity-40 italic p-2">Direktori kosong.</p>`;
+                return;
+            }
+
+            ui.adminUniqueList.innerHTML = items.map(id => {
+                const item = counts[id];
+                return `
+                    <div class="p-2.5 glass border border-white/5 rounded-xl flex items-center justify-between text-xs">
+                        <div>
+                            <p class="font-bold truncate max-w-[140px]">${item.nama}</p>
+                            <p class="text-[9px] font-mono opacity-50">${id}</p>
+                        </div>
+                        <span class="px-2 py-1 bg-amber-600/20 text-amber-500 font-mono font-bold text-[10px] rounded-lg border border-amber-500/10">
+                            ${item.count} Absen
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // EXPORT EXCEL/CSV ENGINE
+        ui.adminExportCsv.onclick = () => {
+            if (records.length === 0) {
+                showToast("Tidak ada data untuk diekspor!", true);
+                return;
+            }
+
+            // Define CSV Headers
+            let csvContent = "data:text/csv;charset=utf-8,ID Record,Nama Lengkap,ID/NIP,Tanggal,Waktu,Latitude,Longitude,Akurasi GPS (Meter)\n";
+            
+            // Map items
+            records.forEach(r => {
+                const dateObj = new Date(r.timestamp);
+                const dateStr = dateObj.toLocaleDateString('id-ID');
+                const timeStr = dateObj.toLocaleTimeString('id-ID');
+                
+                // Clean comma separations inside inputs
+                const cleanName = r.nama.replace(/"/g, '""');
+                const cleanId = r.id_peserta.replace(/"/g, '""');
+
+                csvContent += `"${r.id}","${cleanName}","${cleanId}","${dateStr}","${timeStr}","${r.lat}","${r.lng}","${Math.round(r.accuracy)}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const downloadLink = document.createElement("a");
+            downloadLink.setAttribute("href", encodedUri);
+            downloadLink.setAttribute("download", `Laporan_Absensi_BioSync_${Date.now()}.csv`);
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            showToast("✓ Laporan Excel/CSV berhasil diunduh!");
+        };
+
+        // Export All Data to Clipboard as JSON
+        ui.adminExportJson.onclick = () => {
+            if (records.length === 0) {
+                showToast("Tidak ada data untuk disalin!", true);
+                return;
+            }
+
+            const rawJSON = JSON.stringify(records, null, 2);
+            const textarea = document.createElement('textarea');
+            textarea.value = rawJSON;
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast("✓ Log JSON disalin ke Clipboard!");
+                } else {
+                    showToast("Gagal menyalin data", true);
+                }
+            } catch (err) {
+                showToast("Gagal menyalin data", true);
+            }
+            document.body.removeChild(textarea);
+        };
+
+        // Clear All Database (Internal Confirmation System)
+        ui.adminReset.onclick = () => {
+            if (records.length === 0) {
+                showToast("Database sudah kosong!", true);
+                return;
+            }
+
+            const confirmBox = document.createElement('div');
+            confirmBox.className = "fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-center justify-center p-4";
+            confirmBox.innerHTML = `
+                <div class="glass max-w-sm w-full p-6 text-center space-y-4 border border-red-500/20 shadow-2xl">
+                    <p class="text-2xl">⚠️</p>
+                    <h4 class="text-sm font-black uppercase tracking-wider text-red-400">Hapus Semua Rekor?</h4>
+                    <p class="text-xs opacity-60">Tindakan ini akan menghapus permanen seluruh riwayat absensi lokal dari browser ini.</p>
+                    <div class="flex gap-2">
+                        <button id="cancel-clear-btn" class="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-wider">Batal</button>
+                        <button id="confirm-clear-btn" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider shadow-lg shadow-red-500/20">Hapus Semua</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(confirmBox);
+
+            document.getElementById('cancel-clear-btn').onclick = () => {
+                document.body.removeChild(confirmBox);
+            };
+
+            document.getElementById('confirm-clear-btn').onclick = () => {
+                records = [];
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+                document.body.removeChild(confirmBox);
+                renderAdminDashboard();
+                showToast("✓ Database lokal berhasil direset!");
+            };
+        };
+
+
+        // Theme Engine Configuration
+        ui.themeBtn.onclick = () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            ui.themeBtn.innerText = isLight ? '☀️' : '🌙';
+            localStorage.setItem('biosync_theme_mode', isLight ? 'light' : 'dark');
+        };
+
+        const savedTheme = localStorage.getItem('biosync_theme_mode');
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            ui.themeBtn.innerText = '☀️';
+        }
+
+        // Live Real-Time Clock & Date Engine
+        setInterval(() => {
+            const d = new Date();
+            if(ui.clock) ui.clock.innerText = d.toLocaleTimeString('id-ID', { hour12: false });
+            if(ui.date) ui.date.innerText = d.toLocaleDateString('id-ID', { 
+                weekday: 'long', 
+                day: '2-digit', 
+                month: 'long', 
+                year: 'numeric' 
+            }).toUpperCase();
+        }, 1000);
+
+    </script>
+</body>
+</html>
